@@ -20,6 +20,12 @@ export function Sidebar() {
     return { type, mins, pct: totalMinutes ? Math.round((mins / totalMinutes) * 100) : 0 };
   });
 
+  // Energy distribution for donut-style display
+  const energyDist = (['high', 'medium', 'low'] as const).map((level) => {
+    const mins = dayTasks.filter((t) => t.energyCost === level).reduce((s, t) => s + t.durationMinutes, 0);
+    return { level, mins, pct: totalMinutes ? Math.round((mins / totalMinutes) * 100) : 0 };
+  });
+
   const stats = [
     { icon: Clock, label: 'Scheduled', value: `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m` },
     { icon: Zap, label: 'Focus Time', value: `${Math.floor(focusMinutes / 60)}h ${focusMinutes % 60}m` },
@@ -28,7 +34,7 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="flex w-72 flex-col gap-5 border-r border-border p-5">
+    <aside className="flex w-72 flex-col gap-5 border-r border-border/50 bg-card/50 p-5">
       <div>
         <h2 className="text-lg font-semibold text-foreground">
           {format(new Date(selectedDate + 'T12:00:00'), 'EEEE')}
@@ -45,13 +51,41 @@ export function Sidebar() {
             key={label}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl border border-border bg-secondary/30 p-3"
+            className="glass rounded-2xl p-3"
           >
-            <Icon className="mb-1 h-4 w-4 text-muted-foreground" />
+            <Icon className="mb-1 h-4 w-4 text-primary" />
             <p className="time-mono text-sm font-semibold text-foreground">{value}</p>
             <p className="text-xs text-muted-foreground">{label}</p>
           </motion.div>
         ))}
+      </div>
+
+      {/* Energy Distribution Bar */}
+      <div>
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Energy Distribution
+        </h3>
+        <div className="mb-2 flex h-3 overflow-hidden rounded-full bg-secondary">
+          {energyDist
+            .filter((d) => d.pct > 0)
+            .map((d) => (
+              <motion.div
+                key={d.level}
+                initial={{ width: 0 }}
+                animate={{ width: `${d.pct}%` }}
+                transition={{ duration: 0.5 }}
+                className={`h-full bg-energy-${d.level}`}
+              />
+            ))}
+        </div>
+        <div className="flex justify-between text-xs text-muted-foreground">
+          {energyDist.map((d) => (
+            <span key={d.level} className="flex items-center gap-1">
+              <span className={`inline-block h-2 w-2 rounded-full bg-energy-${d.level}`} />
+              {d.level} {d.pct}%
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Type Distribution */}
@@ -59,7 +93,6 @@ export function Sidebar() {
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Time Distribution
         </h3>
-        {/* Bar */}
         <div className="mb-3 flex h-2 overflow-hidden rounded-full bg-secondary">
           {typeDistribution
             .filter((d) => d.pct > 0)
@@ -97,7 +130,7 @@ export function Sidebar() {
             .sort((a, b) => (a.deadline! > b.deadline! ? 1 : -1))
             .slice(0, 4)
             .map((t) => (
-              <div key={t.id} className="rounded-lg bg-secondary/30 px-3 py-2">
+              <div key={t.id} className="glass rounded-2xl px-3 py-2">
                 <p className="truncate text-sm font-medium text-foreground">{t.title}</p>
                 <p className="time-mono text-xs text-muted-foreground">
                   Due {format(new Date(t.deadline! + 'T12:00:00'), 'EEE, MMM d')}

@@ -1,17 +1,18 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { TimeObject, TaskStatus, ParsedNLInput, TaskType, EnergyCost } from '@/types/calendar';
-import { format, addDays, parse, isAfter, isBefore } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 function generateId() {
   return crypto.randomUUID();
 }
 
-function timeToMinutes(time: string): number {
+export function timeToMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number);
   return h * 60 + m;
 }
 
-function minutesToTime(mins: number): string {
+export function minutesToTime(mins: number): string {
   const h = Math.floor(mins / 60) % 24;
   const m = mins % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
@@ -21,14 +22,12 @@ function minutesToTime(mins: number): string {
 export function parseNaturalLanguage(input: string): ParsedNLInput {
   const lower = input.toLowerCase();
 
-  // Extract duration
   let durationMinutes = 60;
   const hourMatch = lower.match(/(\d+)\s*hours?/);
   const minMatch = lower.match(/(\d+)\s*min(?:ute)?s?/);
   if (hourMatch) durationMinutes = parseInt(hourMatch[1]) * 60;
   if (minMatch) durationMinutes += parseInt(minMatch[1]);
 
-  // Extract deadline
   let deadline: string | undefined;
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const today = new Date();
@@ -43,19 +42,16 @@ export function parseNaturalLanguage(input: string): ParsedNLInput {
   if (lower.includes('tomorrow')) deadline = format(addDays(today, 1), 'yyyy-MM-dd');
   if (lower.includes('today')) deadline = format(today, 'yyyy-MM-dd');
 
-  // Auto-categorize type
   let type: TaskType = 'focus';
   if (/meeting|call|standup|sync|1[:-]1/i.test(lower)) type = 'social';
   else if (/email|invoice|report|expense|admin/i.test(lower)) type = 'admin';
   else if (/clean|organize|update|fix|maintain/i.test(lower)) type = 'maintenance';
   else if (/break|lunch|rest|walk|meditat/i.test(lower)) type = 'rest';
 
-  // Auto energy cost
   let energyCost: EnergyCost = 'medium';
-  if (/presentation|pitch|design|architect|strateg|complex|deep/i.test(lower)) energyCost = 'high';
+  if (/presentation|pitch|design|architect|strateg|complex|deep|coding|code/i.test(lower)) energyCost = 'high';
   else if (/review|check|simple|quick|easy/i.test(lower)) energyCost = 'low';
 
-  // Strip time/day references to get title
   let title = input
     .replace(/(\d+)\s*hours?\s*/gi, '')
     .replace(/(\d+)\s*min(?:ute)?s?\s*/gi, '')
@@ -93,9 +89,12 @@ interface CalendarState {
   handleHealAction: (action: 'reevaluate' | 'snooze' | 'delegate') => void;
   getTasksForDate: (date: string) => TimeObject[];
   findNextAvailableSlot: (date: string, durationMinutes: number) => string;
+  getConflicts: (date: string) => [TimeObject, TimeObject][];
+  resolveConflicts: (date: string) => void;
+  optimizeDay: (date: string) => void;
+  pullForward: (date: string) => void;
 }
 
-// Demo data
 function createDemoTasks(): TimeObject[] {
   const today = format(new Date(), 'yyyy-MM-dd');
   const now = new Date();
@@ -208,125 +207,263 @@ function createDemoTasks(): TimeObject[] {
   ];
 }
 
-export const useCalendarStore = create<CalendarState>((set, get) => ({
-  tasks: createDemoTasks(),
-  selectedDate: format(new Date(), 'yyyy-MM-dd'),
-  healPrompt: null,
+export const useCalendarStore = create<CalendarState>()(
+  persist(
+    (set, get) => ({
+      tasks: createDemoTasks(),
+      selectedDate: format(new Date(), 'yyyy-MM-dd'),
+      healPrompt: null,
 
-  setSelectedDate: (date) => set({ selectedDate: date }),
+      setSelectedDate: (date) => set({ selectedDate: date }),
 
-  addTask: (taskData) => {
-    const task: TimeObject = {
-      ...taskData,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    set((s) => ({ tasks: [...s.tasks, task] }));
-    return task;
-  },
+      addTask: (taskData) => {
+        const task: TimeObject = {
+          ...taskData,
+          id: generateId(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        set((s) => ({ tasks: [...s.tasks, task] }));
+        return task;
+      },
 
-  addFromNaturalLanguage: (input) => {
-    const parsed = parseNaturalLanguage(input);
-    const date = parsed.deadline || get().selectedDate;
-    const startTime = get().findNextAvailableSlot(date, parsed.durationMinutes);
-    const endMinutes = timeToMinutes(startTime) + parsed.durationMinutes;
+      addFromNaturalLanguage: (input) => {
+        const parsed = parseNaturalLanguage(input);
+        const date = parsed.deadline || get().selectedDate;
+        const startTime = get().findNextAvailableSlot(date, parsed.durationMinutes);
+        const endMinutes = timeToMinutes(startTime) + parsed.durationMinutes;
 
-    return get().addTask({
-      title: parsed.title,
-      date,
-      startTime,
-      endTime: minutesToTime(endMinutes),
-      durationMinutes: parsed.durationMinutes,
-      type: parsed.type,
-      energyCost: parsed.energyCost,
-      flexibility: parsed.flexibility,
-      status: 'pending',
-      dependencies: [],
-      priority: parsed.priority,
-      tags: [],
-      naturalLanguageInput: input,
-    });
-  },
-
-  updateTask: (id, updates) => {
-    set((s) => ({
-      tasks: s.tasks.map((t) =>
-        t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t
-      ),
-    }));
-  },
-
-  deleteTask: (id) => {
-    set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
-  },
-
-  moveTask: (id, newStartTime) => {
-    const task = get().tasks.find((t) => t.id === id);
-    if (!task) return;
-
-    const newEndMinutes = timeToMinutes(newStartTime) + task.durationMinutes;
-    get().updateTask(id, {
-      startTime: newStartTime,
-      endTime: minutesToTime(newEndMinutes),
-    });
-
-    // Ripple effect: push overlapping shiftable tasks
-    const dayTasks = get()
-      .getTasksForDate(task.date)
-      .filter((t) => t.id !== id)
-      .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
-
-    const movedEnd = newEndMinutes;
-    for (const other of dayTasks) {
-      if (other.flexibility === 'fixed') continue;
-      const otherStart = timeToMinutes(other.startTime);
-      if (otherStart >= timeToMinutes(newStartTime) && otherStart < movedEnd) {
-        const pushed = minutesToTime(movedEnd);
-        get().updateTask(other.id, {
-          startTime: pushed,
-          endTime: minutesToTime(movedEnd + other.durationMinutes),
+        return get().addTask({
+          title: parsed.title,
+          date,
+          startTime,
+          endTime: minutesToTime(endMinutes),
+          durationMinutes: parsed.durationMinutes,
+          type: parsed.type,
+          energyCost: parsed.energyCost,
+          flexibility: parsed.flexibility,
+          status: 'pending',
+          dependencies: [],
+          priority: parsed.priority,
+          tags: [],
+          naturalLanguageInput: input,
         });
-      }
+      },
+
+      updateTask: (id, updates) => {
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t
+          ),
+        }));
+      },
+
+      deleteTask: (id) => {
+        set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
+        // Pull forward after deletion
+        const task = get().tasks.find(t => t.id === id);
+        if (task) {
+          setTimeout(() => get().pullForward(task.date), 50);
+        }
+      },
+
+      moveTask: (id, newStartTime) => {
+        const task = get().tasks.find((t) => t.id === id);
+        if (!task) return;
+
+        const newEndMinutes = timeToMinutes(newStartTime) + task.durationMinutes;
+        get().updateTask(id, {
+          startTime: newStartTime,
+          endTime: minutesToTime(newEndMinutes),
+        });
+
+        const dayTasks = get()
+          .getTasksForDate(task.date)
+          .filter((t) => t.id !== id)
+          .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+
+        const movedEnd = newEndMinutes;
+        for (const other of dayTasks) {
+          if (other.flexibility === 'fixed') continue;
+          const otherStart = timeToMinutes(other.startTime);
+          if (otherStart >= timeToMinutes(newStartTime) && otherStart < movedEnd) {
+            const pushed = minutesToTime(movedEnd);
+            get().updateTask(other.id, {
+              startTime: pushed,
+              endTime: minutesToTime(movedEnd + other.durationMinutes),
+            });
+          }
+        }
+      },
+
+      completeTask: (id) => {
+        const task = get().tasks.find(t => t.id === id);
+        get().updateTask(id, { status: 'completed', completedAt: new Date().toISOString() });
+        if (task) {
+          setTimeout(() => get().pullForward(task.date), 50);
+        }
+      },
+
+      triggerHeal: (task) => set({ healPrompt: task }),
+      dismissHeal: () => set({ healPrompt: null }),
+
+      handleHealAction: (action) => {
+        const task = get().healPrompt;
+        if (!task) return;
+
+        if (action === 'snooze') {
+          const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+          get().updateTask(task.id, { date: tomorrow, status: 'snoozed' });
+        } else if (action === 'delegate') {
+          get().updateTask(task.id, { status: 'delegated' });
+        } else {
+          get().updateTask(task.id, { status: 'pending' });
+        }
+        set({ healPrompt: null });
+      },
+
+      getTasksForDate: (date) =>
+        get()
+          .tasks.filter((t) => t.date === date)
+          .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)),
+
+      findNextAvailableSlot: (date, durationMinutes) => {
+        const dayTasks = get().getTasksForDate(date);
+        let candidate = 9 * 60;
+        for (const task of dayTasks) {
+          const taskStart = timeToMinutes(task.startTime);
+          const taskEnd = timeToMinutes(task.endTime);
+          if (candidate + durationMinutes <= taskStart) break;
+          candidate = Math.max(candidate, taskEnd);
+        }
+        return minutesToTime(candidate);
+      },
+
+      // Conflict detection: find overlapping task pairs
+      getConflicts: (date) => {
+        const dayTasks = get().getTasksForDate(date).filter(t => t.status !== 'completed' && t.status !== 'delegated');
+        const conflicts: [TimeObject, TimeObject][] = [];
+        for (let i = 0; i < dayTasks.length; i++) {
+          for (let j = i + 1; j < dayTasks.length; j++) {
+            const a = dayTasks[i], b = dayTasks[j];
+            if (timeToMinutes(a.endTime) > timeToMinutes(b.startTime) &&
+                timeToMinutes(b.endTime) > timeToMinutes(a.startTime)) {
+              conflicts.push([a, b]);
+            }
+          }
+        }
+        return conflicts;
+      },
+
+      // Auto-resolve: push shiftable tasks to next available slot
+      resolveConflicts: (date) => {
+        const dayTasks = get().getTasksForDate(date)
+          .filter(t => t.status !== 'completed' && t.status !== 'delegated')
+          .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+        
+        let cursor = 0;
+        for (const task of dayTasks) {
+          const taskStart = timeToMinutes(task.startTime);
+          if (task.flexibility === 'fixed') {
+            cursor = Math.max(cursor, timeToMinutes(task.endTime));
+            continue;
+          }
+          const newStart = Math.max(taskStart, cursor);
+          if (newStart !== taskStart) {
+            get().updateTask(task.id, {
+              startTime: minutesToTime(newStart),
+              endTime: minutesToTime(newStart + task.durationMinutes),
+            });
+          }
+          cursor = newStart + task.durationMinutes;
+        }
+      },
+
+      // Optimize: high energy morning, low energy afternoon
+      optimizeDay: (date) => {
+        const dayTasks = get().getTasksForDate(date)
+          .filter(t => t.status !== 'completed' && t.status !== 'delegated');
+        
+        const fixed = dayTasks.filter(t => t.flexibility === 'fixed');
+        const shiftable = dayTasks.filter(t => t.flexibility !== 'fixed');
+        
+        // Sort: high energy first, then medium, then low
+        const energyOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+        shiftable.sort((a, b) => energyOrder[a.energyCost] - energyOrder[b.energyCost]);
+
+        // Build occupied slots from fixed tasks
+        const occupied = fixed.map(t => ({
+          start: timeToMinutes(t.startTime),
+          end: timeToMinutes(t.endTime),
+        }));
+
+        let cursor = 9 * 60; // start at 9am
+        for (const task of shiftable) {
+          // Find next slot that doesn't overlap with fixed tasks
+          let placed = false;
+          while (!placed && cursor + task.durationMinutes <= 21 * 60) {
+            const end = cursor + task.durationMinutes;
+            const overlaps = occupied.some(o => cursor < o.end && end > o.start);
+            if (!overlaps) {
+              get().updateTask(task.id, {
+                startTime: minutesToTime(cursor),
+                endTime: minutesToTime(end),
+              });
+              occupied.push({ start: cursor, end });
+              cursor = end;
+              placed = true;
+            } else {
+              // Jump past the overlapping fixed task
+              const blocker = occupied.find(o => cursor < o.end && end > o.start);
+              if (blocker) cursor = blocker.end;
+              else cursor += 15;
+            }
+          }
+        }
+      },
+
+      // Pull forward: close gaps after completion/deletion
+      pullForward: (date) => {
+        const dayTasks = get().getTasksForDate(date)
+          .filter(t => t.status !== 'completed' && t.status !== 'delegated');
+        
+        const fixed = dayTasks.filter(t => t.flexibility === 'fixed');
+        const shiftable = dayTasks.filter(t => t.flexibility !== 'fixed')
+          .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+
+        const occupied = fixed.map(t => ({
+          start: timeToMinutes(t.startTime),
+          end: timeToMinutes(t.endTime),
+        }));
+
+        let cursor = 9 * 60;
+        for (const task of shiftable) {
+          while (cursor + task.durationMinutes <= 21 * 60) {
+            const end = cursor + task.durationMinutes;
+            const overlaps = occupied.some(o => cursor < o.end && end > o.start);
+            if (!overlaps) {
+              const currentStart = timeToMinutes(task.startTime);
+              if (cursor < currentStart) {
+                get().updateTask(task.id, {
+                  startTime: minutesToTime(cursor),
+                  endTime: minutesToTime(end),
+                });
+              }
+              occupied.push({ start: cursor, end: Math.max(end, timeToMinutes(task.endTime)) });
+              cursor = end;
+              break;
+            } else {
+              const blocker = occupied.find(o => cursor < o.end && end > o.start);
+              if (blocker) cursor = blocker.end;
+              else cursor += 15;
+            }
+          }
+        }
+      },
+    }),
+    {
+      name: 'chronos-calendar-storage',
+      partialize: (state) => ({ tasks: state.tasks, selectedDate: state.selectedDate }),
     }
-  },
-
-  completeTask: (id) => {
-    get().updateTask(id, { status: 'completed', completedAt: new Date().toISOString() });
-  },
-
-  triggerHeal: (task) => set({ healPrompt: task }),
-  dismissHeal: () => set({ healPrompt: null }),
-
-  handleHealAction: (action) => {
-    const task = get().healPrompt;
-    if (!task) return;
-
-    if (action === 'snooze') {
-      const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
-      get().updateTask(task.id, { date: tomorrow, status: 'snoozed' });
-    } else if (action === 'delegate') {
-      get().updateTask(task.id, { status: 'delegated' });
-    } else {
-      get().updateTask(task.id, { status: 'pending' });
-    }
-    set({ healPrompt: null });
-  },
-
-  getTasksForDate: (date) =>
-    get()
-      .tasks.filter((t) => t.date === date)
-      .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)),
-
-  findNextAvailableSlot: (date, durationMinutes) => {
-    const dayTasks = get().getTasksForDate(date);
-    let candidate = 9 * 60; // Start at 9:00
-    for (const task of dayTasks) {
-      const taskStart = timeToMinutes(task.startTime);
-      const taskEnd = timeToMinutes(task.endTime);
-      if (candidate + durationMinutes <= taskStart) break;
-      candidate = Math.max(candidate, taskEnd);
-    }
-    return minutesToTime(candidate);
-  },
-}));
+  )
+);
