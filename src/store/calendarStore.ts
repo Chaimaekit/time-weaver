@@ -150,6 +150,7 @@ function createDemoTasks(): TimeObject[] {
       dependencies: [],
       priority: 2,
       tags: [],
+      recurrence: 'daily',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     },
