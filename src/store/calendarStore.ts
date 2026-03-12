@@ -210,7 +210,7 @@ function createDemoTasks(): TimeObject[] {
 export const useCalendarStore = create<CalendarState>()(
   persist(
     (set, get) => ({
-      tasks: createDemoTasks(),
+      tasks: [] as TimeObject[],
       selectedDate: format(new Date(), 'yyyy-MM-dd'),
       healPrompt: null,
 
