@@ -188,6 +188,7 @@ function createDemoTasks(): TimeObject[] {
       deadline: format(addDays(now, 2), 'yyyy-MM-dd'),
       priority: 5,
       tags: ['pitch', 'urgent'],
+      recurrence: 'none',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     },
