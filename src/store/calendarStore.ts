@@ -168,6 +168,7 @@ function createDemoTasks(): TimeObject[] {
       dependencies: [],
       priority: 3,
       tags: ['review'],
+      recurrence: 'none',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     },
