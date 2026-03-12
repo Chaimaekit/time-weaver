@@ -113,6 +113,7 @@ function createDemoTasks(): TimeObject[] {
       dependencies: [],
       priority: 3,
       tags: ['team', 'recurring'],
+      recurrence: 'daily',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     },
