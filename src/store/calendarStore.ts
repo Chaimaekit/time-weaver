@@ -210,7 +210,7 @@ function createDemoTasks(): TimeObject[] {
 export const useCalendarStore = create<CalendarState>()(
   persist(
     (set, get) => ({
-      tasks: createDemoTasks(),
+      tasks: [] as TimeObject[],
       selectedDate: format(new Date(), 'yyyy-MM-dd'),
       healPrompt: null,
 
@@ -464,6 +464,11 @@ export const useCalendarStore = create<CalendarState>()(
     {
       name: 'chronos-calendar-storage',
       partialize: (state) => ({ tasks: state.tasks, selectedDate: state.selectedDate }),
+      onRehydrateStorage: () => (state) => {
+        if (state && state.tasks.length === 0) {
+          state.tasks = createDemoTasks();
+        }
+      },
     }
   )
 );
