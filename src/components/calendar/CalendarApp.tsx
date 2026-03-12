@@ -8,7 +8,7 @@ import { HealDialog } from './HealDialog';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function CalendarApp() {
-  const { selectedDate, setSelectedDate, getConflicts, resolveConflicts, optimizeDay } = useCalendarStore();
+  const { selectedDate, setSelectedDate, getConflicts, resolveConflicts, optimizeDay, getTasksForDate } = useCalendarStore();
 
   const goToday = () => setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
   const goPrev = () => setSelectedDate(format(subDays(new Date(selectedDate + 'T12:00:00'), 1), 'yyyy-MM-dd'));
@@ -16,6 +16,42 @@ export function CalendarApp() {
 
   const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
   const conflicts = getConflicts(selectedDate);
+
+  const downloadSchedule = () => {
+    const tasks = getTasksForDate(selectedDate);
+    const dateLabel = format(new Date(selectedDate + 'T12:00:00'), 'EEEE, MMMM d, yyyy');
+    
+    let content = `CHRONOS — Day Schedule\n`;
+    content += `${'='.repeat(40)}\n`;
+    content += `Date: ${dateLabel}\n`;
+    content += `Generated: ${format(new Date(), 'PPpp')}\n`;
+    content += `${'='.repeat(40)}\n\n`;
+
+    if (tasks.length === 0) {
+      content += 'No tasks scheduled for this day.\n';
+    } else {
+      tasks.forEach((task, i) => {
+        content += `${i + 1}. [${task.startTime} – ${task.endTime}] ${task.title}\n`;
+        content += `   Type: ${task.type.charAt(0).toUpperCase() + task.type.slice(1)} | Energy: ${task.energyCost} | Status: ${task.status}\n`;
+        content += `   Flexibility: ${task.flexibility} | Priority: ${task.priority}/5\n`;
+        if (task.description) content += `   Notes: ${task.description}\n`;
+        content += '\n';
+      });
+
+      const totalMin = tasks.reduce((s, t) => s + t.durationMinutes, 0);
+      content += `${'—'.repeat(40)}\n`;
+      content += `Total scheduled: ${Math.floor(totalMin / 60)}h ${totalMin % 60}m\n`;
+      content += `Tasks: ${tasks.length} | Completed: ${tasks.filter(t => t.status === 'completed').length}\n`;
+    }
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chronos-schedule-${selectedDate}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="flex h-screen flex-col bg-background">
