@@ -52,12 +52,12 @@
     --surface-elevated: 225 18% 15%;
     --surface-sunken: 225 20% 8%;
     --glass: 225 18% 14%;
-    --glow-primary: 200 80% 55%;
+    --glow-primary: 160 45% 42%;
 
     --sidebar-background: 225 18% 11%;
     --sidebar-foreground: 220 12% 65%;
-    --sidebar-primary: 200 80% 55%;
-    --sidebar-primary-foreground: 225 20% 8%;
+    --sidebar-primary: 160 45% 42%;
+    --sidebar-primary-foreground: 160 10% 95%;
     --sidebar-accent: 225 15% 18%;
     --sidebar-accent-foreground: 220 15% 85%;
     --sidebar-border: 225 12% 18%;
