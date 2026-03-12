@@ -24,6 +24,7 @@ export interface TimeObject {
   updatedAt: string;
   completedAt?: string;
   naturalLanguageInput?: string;
+  recurrence: Recurrence;
 }
 
 export interface ParsedNLInput {

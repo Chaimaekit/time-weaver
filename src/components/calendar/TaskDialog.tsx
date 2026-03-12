@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useCalendarStore, timeToMinutes, minutesToTime } from '@/store/calendarStore';
-import { TaskType, EnergyCost, TimeObject, TASK_TYPE_LABELS, TYPE_ICONS } from '@/types/calendar';
+import { TaskType, EnergyCost, Recurrence, TimeObject, TASK_TYPE_LABELS, TYPE_ICONS } from '@/types/calendar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus } from 'lucide-react';
 
@@ -21,6 +21,7 @@ export function TaskDialog({ open, onClose, editTask }: TaskDialogProps) {
   const [endTime, setEndTime] = useState(editTask?.endTime || '10:00');
   const [flexibility, setFlexibility] = useState<'fixed' | 'shiftable'>(editTask?.flexibility === 'fixed' ? 'fixed' : 'shiftable');
   const [priority, setPriority] = useState(editTask?.priority || 3);
+  const [recurrence, setRecurrence] = useState<Recurrence>(editTask?.recurrence || 'none');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +44,7 @@ export function TaskDialog({ open, onClose, editTask }: TaskDialogProps) {
       dependencies: editTask?.dependencies || [],
       priority,
       tags: editTask?.tags || [],
+      recurrence,
     };
 
     if (editTask) {
@@ -55,6 +57,13 @@ export function TaskDialog({ open, onClose, editTask }: TaskDialogProps) {
 
   const types: TaskType[] = ['focus', 'admin', 'social', 'maintenance', 'rest'];
   const energies: EnergyCost[] = ['high', 'medium', 'low'];
+  const recurrenceOptions: { val: Recurrence; label: string; icon: string }[] = [
+    { val: 'none', label: 'Once', icon: '1️⃣' },
+    { val: 'daily', label: 'Daily', icon: '📅' },
+    { val: 'weekly', label: 'Weekly', icon: '🗓️' },
+    { val: 'monthly', label: 'Monthly', icon: '📆' },
+    { val: 'yearly', label: 'Yearly', icon: '🎂' },
+  ];
 
   return (
     <AnimatePresence>
@@ -71,7 +80,7 @@ export function TaskDialog({ open, onClose, editTask }: TaskDialogProps) {
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 12 }}
             onClick={(e) => e.stopPropagation()}
-            className="glass-strong relative w-full max-w-md rounded-2xl p-6 soft-shadow"
+            className="glass-strong relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-6 soft-shadow scrollbar-thin"
           >
             <button onClick={onClose} className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors">
               <X className="h-4 w-4" />
@@ -211,6 +220,27 @@ export function TaskDialog({ open, onClose, editTask }: TaskDialogProps) {
                   >
                     🔄 Shiftable
                   </button>
+                </div>
+              </div>
+
+              {/* Recurrence */}
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground">Repeat</label>
+                <div className="flex flex-wrap gap-2">
+                  {recurrenceOptions.map(({ val, label, icon }) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setRecurrence(val)}
+                      className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-all ${
+                        recurrence === val
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'bg-secondary text-secondary-foreground hover:bg-accent'
+                      }`}
+                    >
+                      {icon} {label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
