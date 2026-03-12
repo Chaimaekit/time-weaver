@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { TimeObject, TYPE_ICONS } from '@/types/calendar';
 import { useCalendarStore } from '@/store/calendarStore';
 import { motion } from 'framer-motion';
-import { Check, Trash2, AlertTriangle, Pencil } from 'lucide-react';
+import { Check, Trash2, AlertTriangle, Pencil, Undo2 } from 'lucide-react';
 import { TaskDialog } from './TaskDialog';
+import { format } from 'date-fns';
 
 interface TimeBlockProps {
   task: TimeObject;
@@ -33,18 +34,24 @@ export function TimeBlock({ task, pixelsPerMinute, hasConflict }: TimeBlockProps
   const isOverdue = task.status === 'overdue';
   const isCompleted = task.status === 'completed';
 
+  // Determine if this task is in the past (end time has passed today)
+  const now = new Date();
+  const isToday = task.date === format(now, 'yyyy-MM-dd');
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const isPast = isToday && timeToMinutes(task.endTime) < nowMinutes && !isCompleted;
+
   return (
     <>
       <motion.div
         layout
         initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: isCompleted ? 0.4 : 1, scale: 1 }}
+        animate={{ opacity: isCompleted ? 0.4 : isPast ? 0.5 : 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95, x: 20 }}
         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         style={{ top, height }}
         className={`absolute left-16 right-2 rounded-2xl px-3 py-1.5 ${categoryClass} cursor-pointer group transition-all hover:brightness-105 soft-shadow ${
           isOverdue ? 'animate-pulse-glow' : ''
-        } ${isCompleted ? 'line-through opacity-40' : ''} ${
+        } ${isCompleted ? 'line-through opacity-40' : ''} ${isPast ? 'grayscale-[0.3]' : ''} ${
           hasConflict ? 'ring-2 ring-destructive ring-offset-2 ring-offset-background' : ''
         }`}
         onClick={() => setEditOpen(true)}
@@ -91,9 +98,9 @@ export function TimeBlock({ task, pixelsPerMinute, hasConflict }: TimeBlockProps
             <button
               onClick={(e) => { e.stopPropagation(); completeTask(task.id); }}
               className="rounded-lg p-1 transition-colors hover:bg-accent"
-              title="Complete"
+              title={isCompleted ? 'Undo Complete' : 'Complete'}
             >
-              <Check className="h-3.5 w-3.5" />
+              {isCompleted ? <Undo2 className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}

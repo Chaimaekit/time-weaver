@@ -15,8 +15,8 @@
     --popover: 225 18% 14%;
     --popover-foreground: 220 15% 90%;
 
-    --primary: 200 80% 55%;
-    --primary-foreground: 225 20% 8%;
+    --primary: 160 45% 42%;
+    --primary-foreground: 160 10% 95%;
 
     --secondary: 225 15% 18%;
     --secondary-foreground: 220 12% 70%;
@@ -32,7 +32,7 @@
 
     --border: 225 12% 20%;
     --input: 225 12% 20%;
-    --ring: 200 80% 55%;
+    --ring: 160 45% 42%;
 
     --radius: 1.25rem;
 
@@ -52,16 +52,16 @@
     --surface-elevated: 225 18% 15%;
     --surface-sunken: 225 20% 8%;
     --glass: 225 18% 14%;
-    --glow-primary: 200 80% 55%;
+    --glow-primary: 160 45% 42%;
 
     --sidebar-background: 225 18% 11%;
     --sidebar-foreground: 220 12% 65%;
-    --sidebar-primary: 200 80% 55%;
-    --sidebar-primary-foreground: 225 20% 8%;
+    --sidebar-primary: 160 45% 42%;
+    --sidebar-primary-foreground: 160 10% 95%;
     --sidebar-accent: 225 15% 18%;
     --sidebar-accent-foreground: 220 15% 85%;
     --sidebar-border: 225 12% 18%;
-    --sidebar-ring: 200 80% 55%;
+    --sidebar-ring: 160 45% 42%;
 
     --font-display: 'DM Sans', system-ui, sans-serif;
     --font-mono: 'Space Mono', 'Fira Code', monospace;

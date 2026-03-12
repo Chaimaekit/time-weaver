@@ -298,8 +298,12 @@ export const useCalendarStore = create<CalendarState>()(
 
       completeTask: (id) => {
         const task = get().tasks.find(t => t.id === id);
-        get().updateTask(id, { status: 'completed', completedAt: new Date().toISOString() });
-        if (task) {
+        if (!task) return;
+        if (task.status === 'completed') {
+          // Undo completion
+          get().updateTask(id, { status: 'pending', completedAt: undefined });
+        } else {
+          get().updateTask(id, { status: 'completed', completedAt: new Date().toISOString() });
           setTimeout(() => get().pullForward(task.date), 50);
         }
       },
