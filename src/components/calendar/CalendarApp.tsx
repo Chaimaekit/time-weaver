@@ -93,6 +93,15 @@ export function CalendarApp() {
             Optimize Day
           </button>
 
+          {/* Download button */}
+          <button
+            onClick={downloadSchedule}
+            className="flex items-center gap-2 rounded-2xl bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground transition-colors hover:bg-accent/80"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export
+          </button>
+
           <div className="mx-2 h-5 w-px bg-border" />
 
           <button onClick={goPrev} className="rounded-xl p-2 transition-colors hover:bg-accent">
