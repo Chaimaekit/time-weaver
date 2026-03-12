@@ -98,9 +98,9 @@ export function TimeBlock({ task, pixelsPerMinute, hasConflict }: TimeBlockProps
             <button
               onClick={(e) => { e.stopPropagation(); completeTask(task.id); }}
               className="rounded-lg p-1 transition-colors hover:bg-accent"
-              title="Complete"
+              title={isCompleted ? 'Undo Complete' : 'Complete'}
             >
-              <Check className="h-3.5 w-3.5" />
+              {isCompleted ? <Undo2 className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
