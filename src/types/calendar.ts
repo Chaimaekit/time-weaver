@@ -2,6 +2,7 @@ export type TaskType = 'focus' | 'admin' | 'social' | 'maintenance' | 'rest';
 export type EnergyCost = 'high' | 'medium' | 'low';
 export type Flexibility = 'fixed' | 'shiftable' | 'autoschedule';
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'overdue' | 'snoozed' | 'delegated';
+export type Recurrence = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface TimeObject {
   id: string;
@@ -23,6 +24,7 @@ export interface TimeObject {
   updatedAt: string;
   completedAt?: string;
   naturalLanguageInput?: string;
+  recurrence: Recurrence;
 }
 
 export interface ParsedNLInput {

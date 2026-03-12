@@ -63,6 +63,11 @@ export function TimeBlock({ task, pixelsPerMinute, hasConflict }: TimeBlockProps
               <span className={`truncate font-medium ${isCompact ? 'text-xs' : 'text-sm'}`}>
                 {task.title}
               </span>
+              {task.recurrence && task.recurrence !== 'none' && (
+                <span className="rounded-md bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                  🔁 {task.recurrence}
+                </span>
+              )}
             </div>
             {!isCompact && (
               <div className="mt-0.5 flex items-center gap-2 text-xs opacity-70">

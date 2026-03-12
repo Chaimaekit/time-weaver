@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useCalendarStore } from '@/store/calendarStore';
 import { format, addDays, subDays } from 'date-fns';
 import { ChevronLeft, ChevronRight, Cpu, Wand2, AlertCircle, Download } from 'lucide-react';
@@ -53,8 +54,36 @@ export function CalendarApp() {
     URL.revokeObjectURL(url);
   };
 
+  // Swipe handling
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    if (Math.abs(distance) >= minSwipeDistance) {
+      if (distance > 0) goNext(); // swipe left → next day
+      else goPrev(); // swipe right → prev day
+    }
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div
+      className="flex h-screen flex-col bg-background"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {/* Header */}
       <header className="flex items-center justify-between border-b border-border/50 px-6 py-4 glass-strong">
         <div className="flex items-center gap-3">

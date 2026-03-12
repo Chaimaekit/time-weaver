@@ -53,6 +53,7 @@ export function DayTimeline() {
       dependencies: [],
       priority: 1,
       tags: ['break'],
+      recurrence: 'none',
     });
   };
 

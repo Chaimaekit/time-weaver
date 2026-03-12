@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { TimeObject, TaskStatus, ParsedNLInput, TaskType, EnergyCost } from '@/types/calendar';
+import { TimeObject, TaskStatus, ParsedNLInput, TaskType, EnergyCost, Recurrence } from '@/types/calendar';
 import { format, addDays } from 'date-fns';
 
 function generateId() {
@@ -113,6 +113,7 @@ function createDemoTasks(): TimeObject[] {
       dependencies: [],
       priority: 3,
       tags: ['team', 'recurring'],
+      recurrence: 'daily',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     },
@@ -131,6 +132,7 @@ function createDemoTasks(): TimeObject[] {
       dependencies: [],
       priority: 5,
       tags: ['architecture', 'q1-goal'],
+      recurrence: 'none',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     },
@@ -148,6 +150,7 @@ function createDemoTasks(): TimeObject[] {
       dependencies: [],
       priority: 2,
       tags: [],
+      recurrence: 'daily',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     },
@@ -165,6 +168,7 @@ function createDemoTasks(): TimeObject[] {
       dependencies: [],
       priority: 3,
       tags: ['review'],
+      recurrence: 'none',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     },
@@ -184,6 +188,7 @@ function createDemoTasks(): TimeObject[] {
       deadline: format(addDays(now, 2), 'yyyy-MM-dd'),
       priority: 5,
       tags: ['pitch', 'urgent'],
+      recurrence: 'none',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     },
@@ -201,6 +206,7 @@ function createDemoTasks(): TimeObject[] {
       dependencies: [],
       priority: 3,
       tags: ['team'],
+      recurrence: 'weekly',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     },
@@ -246,6 +252,7 @@ export const useCalendarStore = create<CalendarState>()(
           dependencies: [],
           priority: parsed.priority,
           tags: [],
+          recurrence: 'none',
           naturalLanguageInput: input,
         });
       },
