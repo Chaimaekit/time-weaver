@@ -132,6 +132,7 @@ function createDemoTasks(): TimeObject[] {
       dependencies: [],
       priority: 5,
       tags: ['architecture', 'q1-goal'],
+      recurrence: 'none',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     },
