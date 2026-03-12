@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { TimeObject, TaskStatus, ParsedNLInput, TaskType, EnergyCost } from '@/types/calendar';
+import { TimeObject, TaskStatus, ParsedNLInput, TaskType, EnergyCost, Recurrence } from '@/types/calendar';
 import { format, addDays } from 'date-fns';
 
 function generateId() {
