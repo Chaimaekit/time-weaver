@@ -246,6 +246,7 @@ export const useCalendarStore = create<CalendarState>()(
           dependencies: [],
           priority: parsed.priority,
           tags: [],
+          recurrence: 'none',
           naturalLanguageInput: input,
         });
       },
