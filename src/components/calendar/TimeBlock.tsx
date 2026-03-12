@@ -51,7 +51,7 @@ export function TimeBlock({ task, pixelsPerMinute, hasConflict }: TimeBlockProps
         style={{ top, height }}
         className={`absolute left-16 right-2 rounded-2xl px-3 py-1.5 ${categoryClass} cursor-pointer group transition-all hover:brightness-105 soft-shadow ${
           isOverdue ? 'animate-pulse-glow' : ''
-        } ${isCompleted ? 'line-through opacity-40' : ''} ${
+        } ${isCompleted ? 'line-through opacity-40' : ''} ${isPast ? 'grayscale-[0.3]' : ''} ${
           hasConflict ? 'ring-2 ring-destructive ring-offset-2 ring-offset-background' : ''
         }`}
         onClick={() => setEditOpen(true)}
