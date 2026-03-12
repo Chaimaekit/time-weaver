@@ -1,6 +1,6 @@
 import { useCalendarStore } from '@/store/calendarStore';
 import { format, addDays, subDays } from 'date-fns';
-import { ChevronLeft, ChevronRight, Cpu, Wand2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Cpu, Wand2, AlertCircle, Download } from 'lucide-react';
 import { SmartInput } from './SmartInput';
 import { DayTimeline } from './DayTimeline';
 import { Sidebar } from './Sidebar';

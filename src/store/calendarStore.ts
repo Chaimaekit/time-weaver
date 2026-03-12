@@ -464,6 +464,11 @@ export const useCalendarStore = create<CalendarState>()(
     {
       name: 'chronos-calendar-storage',
       partialize: (state) => ({ tasks: state.tasks, selectedDate: state.selectedDate }),
+      onRehydrateStorage: () => (state) => {
+        if (state && state.tasks.length === 0) {
+          state.tasks = createDemoTasks();
+        }
+      },
     }
   )
 );
