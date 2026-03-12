@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { TimeObject, TYPE_ICONS } from '@/types/calendar';
 import { useCalendarStore } from '@/store/calendarStore';
 import { motion } from 'framer-motion';
-import { Check, Trash2, AlertTriangle, Pencil } from 'lucide-react';
+import { Check, Trash2, AlertTriangle, Pencil, Undo2 } from 'lucide-react';
 import { TaskDialog } from './TaskDialog';
+import { format } from 'date-fns';
 
 interface TimeBlockProps {
   task: TimeObject;
@@ -32,6 +33,12 @@ export function TimeBlock({ task, pixelsPerMinute, hasConflict }: TimeBlockProps
   const categoryClass = `category-${task.type}` as string;
   const isOverdue = task.status === 'overdue';
   const isCompleted = task.status === 'completed';
+
+  // Determine if this task is in the past (end time has passed today)
+  const now = new Date();
+  const isToday = task.date === format(now, 'yyyy-MM-dd');
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const isPast = isToday && timeToMinutes(task.endTime) < nowMinutes && !isCompleted;
 
   return (
     <>
