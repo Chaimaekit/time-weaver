@@ -45,7 +45,7 @@ export function TimeBlock({ task, pixelsPerMinute, hasConflict }: TimeBlockProps
       <motion.div
         layout
         initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: isCompleted ? 0.4 : 1, scale: 1 }}
+        animate={{ opacity: isCompleted ? 0.4 : isPast ? 0.5 : 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95, x: 20 }}
         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         style={{ top, height }}
